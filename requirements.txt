@@ -1,0 +1,6 @@
+xarray~=0.16.2
+dask~=2021.1.0
+netcdf4
+toolz
+pandas~=1.2.0
+numpy~=1.19.5
