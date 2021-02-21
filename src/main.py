@@ -71,12 +71,14 @@ def get_options():
     parser.add_argument(
         '--period',
         help='The number of days to calculate the Green Date over.',
-        default=3
+        default=3,
+        type=int
     )
     parser.add_argument(
         '--rain_threshold',
         help='The rainfall threshold for Green Date conditions to be considered met.',
-        default=30
+        default=30,
+        type=int
     )
     parser.add_argument(
         '--multiprocessing',
