@@ -1,6 +1,9 @@
 xarray~=0.16.2
-dask~=2021.1.0
+dask~=2021.2.0
 netcdf4
 toolz
 pandas~=1.2.0
 numpy~=1.19.5
+scipy
+matplotlib~=3.3.4
+Cartopy~=0.18.0
