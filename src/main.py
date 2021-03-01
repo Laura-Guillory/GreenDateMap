@@ -183,6 +183,9 @@ def gen_map(options):
     projection = cartopy.crs.PlateCarree()
     left, right, bottom, top = 112, 154, -25, -10
     TITLE_FONT = FontProperties(fname='fonts/Roboto-Light.ttf', size=12)
+    colours = ['#224e96', '#2e68af', '#4283c4', '#59a3d7', '#73b9e5', '#85b8b4', '#8bbd9f', '#a3c38f', '#cbe0b7',
+               '#eaefaa', '#fbe884', '#fdd76d', '#fab446', '#f36a2a', '#e94f29', '#de3828', '#c91e27', '#b01a20',
+               '#921519']
 
     figure = pyplot.figure(figsize=(8, 8))  # Set size of the plot
     ax = pyplot.axes(projection=projection, extent=(left, right, bottom, top+2))
@@ -195,7 +198,7 @@ def gen_map(options):
         warnings.simplefilter('ignore', category=RuntimeWarning)
         levels = [0, 10, 20, 30, 40, 50, 61, 71, 81, 91, 101, 111, 122, 132, 142, 153, 163, 173, 181]
         im = ax.contourf(data['lon'], data['lat'], data['green_dates'], extend='max',
-                         transform=cartopy.crs.PlateCarree(), levels=levels, zorder=1)
+                         transform=cartopy.crs.PlateCarree(), levels=levels, colors=colours, zorder=1)
 
     # Draw borders
     for state in shape.records():
