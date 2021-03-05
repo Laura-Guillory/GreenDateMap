@@ -51,7 +51,7 @@ def get_options():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         '-v', '--verbose',
-        help='Increase output verbosity',
+        help='Increase output verbosity.',
         action='store_const',
         const=logging.INFO,
         default=logging.WARN
@@ -73,13 +73,13 @@ def get_options():
     )
     parser.add_argument(
         '--period',
-        help='The number of days to calculate the Green Date over.',
+        help='The number of days to calculate the Green Date over. Defaults to 3 days.',
         default=3,
         type=int
     )
     parser.add_argument(
         '--rain_threshold',
-        help='The rainfall threshold for Green Date conditions to be considered met.',
+        help='The rainfall threshold for Green Date conditions to be considered met. Defaults to 30mm.',
         default=30,
         type=int
     )
@@ -93,7 +93,7 @@ def get_options():
     )
     parser.add_argument(
         '--title',
-        help='The title of the map produced.',
+        help='The title of the map produced. Defaults to no title.',
         default=''
     )
     args = parser.parse_args()
