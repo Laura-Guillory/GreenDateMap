@@ -229,11 +229,10 @@ def gen_map(options):
 
     data = xarray.open_dataset(path)
     projection = cartopy.crs.PlateCarree()
-    left, right, bottom, top = 112, 154, -25, -10
+    left, right, bottom, top = 112, 154, -28, -10
     TITLE_FONT = FontProperties(fname='fonts/Roboto-Light.ttf', size=12)
-    colours = ['#224e96', '#2e68af', '#4283c4', '#59a3d7', '#73b9e5', '#85b8b4', '#8bbd9f', '#a3c38f', '#cbe0b7',
-               '#eaefaa', '#fbe884', '#fdd76d', '#fab446', '#f36a2a', '#e94f29', '#de3828', '#c91e27', '#b01a20',
-               '#921519']
+    colours = ['#374a9f', '#4575b3', '#659bc8', '#8abeda', '#acdae9', '#cfebf3', '#ebf7e4', '#fffebe', '#fee99d',
+               '#feca7c', '#fca85e', '#f67a49', '#e54f35', '#d02a27', '#b10b26', '#999999']
 
     figure = pyplot.figure(figsize=(8, 8))  # Set size of the plot
     # Create axis for the plot using the desired projection and extent
@@ -247,7 +246,7 @@ def gen_map(options):
         warnings.simplefilter('ignore', category=RuntimeWarning)
         # Plot data as a contour. Levels are used to decide the threshold for each contour level (currently 3 levels
         # per month, see the colourbar in the result)
-        levels = [0, 10, 20, 30, 40, 50, 61, 71, 81, 91, 101, 111, 122, 132, 142, 153, 163, 173, 181]
+        levels = [30, 40, 50, 61, 71, 81, 91, 101, 111, 122, 132, 142, 153, 163, 173, 181]
         im = ax.contourf(data['lon'], data['lat'], data['green_dates'], extend='max',
                          transform=cartopy.crs.PlateCarree(), levels=levels, colors=colours, zorder=1)
 
@@ -257,10 +256,10 @@ def gen_map(options):
                           linewidth=0.4, zorder=3)
 
     # Add a colourbar
-    colourbar_axis = figure.add_axes([0.21, 0.28, .6, .02])
+    colourbar_axis = figure.add_axes([0.21, 0.25, .6, .02])
     colourbar = figure.colorbar(im, cax=colourbar_axis, extendfrac=.05, orientation='horizontal')
-    date_ticklabels = ['1 Sep', '1 Oct', '1 Nov', '1 Dec', '1 Jan', '1 Feb', '1 Mar']
-    colourbar.set_ticks([0, 30, 61, 91, 122, 153, 181])
+    date_ticklabels = ['1 Oct', '1 Nov', '1 Dec', '1 Jan', '1 Feb', '1 Mar']
+    colourbar.set_ticks([30, 61, 91, 122, 153, 181])
     colourbar.set_ticklabels(date_ticklabels)
     for tick in colourbar.ax.get_xticklabels():
         tick.set_font_properties(FontProperties(fname='fonts/Roboto-Light.ttf', size=8))
