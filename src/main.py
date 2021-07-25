@@ -27,7 +27,7 @@ def main():
     start_time = datetime.now()
     LOGGER.info('Starting time: ' + str(start_time))
 
-    calc_green_date(options)
+    #calc_green_date(options)
     gen_map(options)
 
     end_time = datetime.now()
@@ -231,7 +231,7 @@ def gen_map(options):
     projection = cartopy.crs.PlateCarree()
     left, right, bottom, top = 112, 154, -28, -10
     TITLE_FONT = FontProperties(fname='fonts/Roboto-Light.ttf', size=12)
-    colours = ['#374a9f', '#4575b3', '#659bc8', '#8abeda', '#acdae9', '#cfebf3', '#ebf7e4', '#fffebe', '#fee99d',
+    colours = ['#374a9f', '#3967a3', '#4575b3', '#659bc8', '#8abeda', '#acdae9', '#cfebf3', '#ebf7e4', '#fffebe', '#fee99d',
                '#feca7c', '#fca85e', '#f67a49', '#e54f35', '#d02a27', '#b10b26', '#999999']
 
     figure = pyplot.figure(figsize=(8, 8))  # Set size of the plot
@@ -247,7 +247,7 @@ def gen_map(options):
         # Plot data as a contour. Levels are used to decide the threshold for each contour level (currently 3 levels
         # per month, see the colourbar in the result)
         levels = [30, 40, 50, 61, 71, 81, 91, 101, 111, 122, 132, 142, 153, 163, 173, 181]
-        im = ax.contourf(data['lon'], data['lat'], data['green_dates'], extend='max',
+        im = ax.contourf(data['lon'], data['lat'], data['green_dates'], extend='both',
                          transform=cartopy.crs.PlateCarree(), levels=levels, colors=colours, zorder=1)
 
     # Draw borders
