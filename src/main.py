@@ -8,11 +8,6 @@ import numpy
 import math
 import multiprocessing
 import os
-from matplotlib import pyplot
-import cartopy
-from cartopy.io import shapereader
-import warnings
-from matplotlib.font_manager import FontProperties
 
 logging.basicConfig(level=logging.WARN, format="%(asctime)s %(levelname)s: %(message)s", datefmt="%Y-%m-%d  %H:%M:%S")
 LOGGER = logging.getLogger(__name__)
@@ -27,8 +22,7 @@ def main():
     start_time = datetime.now()
     LOGGER.info('Starting time: ' + str(start_time))
 
-    #calc_green_date(options)
-    gen_map(options)
+    calc_green_date(options)
 
     end_time = datetime.now()
     LOGGER.info('End time: ' + str(end_time))
@@ -41,7 +35,7 @@ def get_options():
     Gets command line arguments and returns them.
     Options are accessed via options.verbose, etc.
 
-    Required arguments: daily_rain
+    Required arguments: daily_rain, clay_content_percentage
     Optional arguments: verbose (v), start_date, end_date, period, rain_threshold, multiprocessing, title
 
     Run this with the -h (help) argument for more detailed information. (python main.py -h)
@@ -92,9 +86,9 @@ def get_options():
         default="all_but_one",
     )
     parser.add_argument(
-        '--title',
-        help='The title of the map produced. Defaults to no title.',
-        default=''
+        '--output',
+        help='The file to save the results to',
+        default='results'
     )
     args = parser.parse_args()
     return args
@@ -128,7 +122,7 @@ def calc_green_date(options):
     multiprocess_args = []
     processed_files = []
     for key, value in year_idxs.items():
-        temp_filepath = 'results/' + str(key) + '.' + str(os.getpid()) + '.temp'
+        temp_filepath = '{folder}/{year}.{pid}.temp'.format(folder=options.output, year=key, pid=os.getpid())
         multiprocess_args.append((daily_rain.isel(time=value), options, temp_filepath))
         processed_files.append(temp_filepath)
 
@@ -148,13 +142,11 @@ def calc_green_date(options):
 
     # Open results for each year, which were temporarily stored. These contain the green dates for each year.
     green_date_per_year = xarray.open_mfdataset(processed_files, combine='by_coords')
-    # LOGGER.info('Green date per year:')
-    # LOGGER.info(green_date_per_year['green_dates'].values[:, 400, 400])
     # Takes the green dates for each year and calculates the 70th percentile over all years.
     percentile_green_date = green_date_per_year.reduce(numpy.nanpercentile, dim='time', q=70)
-    # LOGGER.info('Green dates:')
-    # LOGGER.info(percentile_green_date['green_dates'].values[400, 400])
-    utils.save_to_netcdf(percentile_green_date, 'results/green_date.nc', logging_level=logging.INFO)
+    percentile_green_date = percentile_green_date.rename({'lon': 'longitude', 'lat': 'latitude'})
+    output_path = '{folder}/green_date_{threshold}mm.nc'.format(folder=options.output, threshold=options.rain_threshold)
+    utils.save_to_netcdf(percentile_green_date, output_path, logging_level=logging.INFO)
     green_date_per_year.close()
     # Removes all temporary files
     for process in multiprocess_args:
@@ -211,65 +203,15 @@ def calc_green_date_for_year(args):
         {'green_dates': (['time', 'lat', 'lon'], green_dates)},
         coords={
             'time': [dataset.time.values[0].astype('datetime64[Y]')],
-            'lat': dataset.lat,
-            'lon': dataset.lon
+            'latitude': dataset.lat,
+            'longitude': dataset.lon
         }
     )
+    description = 'Green Date, which is the first date after 1 September where there is historically a 70% chance of ' \
+                  'receiving at least {threshold}mm of rain over a maximum of {period} days.'\
+        .format(threshold=options.rain_threshold, period=options.period)
+    green_dates.green_dates.assign_attrs({'long_name': 'Green Date', 'description': description})
     utils.save_to_netcdf(green_dates, temp_filepath)
-
-
-def gen_map(options):
-    """
-    Converts the results from netCDF to a png image.
-
-    :param options:
-    :return:
-    """
-    path = 'results/green_date.nc'
-
-    data = xarray.open_dataset(path)
-    projection = cartopy.crs.PlateCarree()
-    left, right, bottom, top = 112, 154, -28, -10
-    TITLE_FONT = FontProperties(fname='fonts/Roboto-Light.ttf', size=12)
-    colours = ['#374a9f', '#3967a3', '#4575b3', '#659bc8', '#8abeda', '#acdae9', '#cfebf3', '#ebf7e4', '#fffebe', '#fee99d',
-               '#feca7c', '#fca85e', '#f67a49', '#e54f35', '#d02a27', '#b10b26', '#999999']
-
-    figure = pyplot.figure(figsize=(8, 8))  # Set size of the plot
-    # Create axis for the plot using the desired projection and extent
-    ax = pyplot.axes(projection=projection, extent=(left, right, bottom, top+2))
-    pyplot.gca().outline_patch.set_visible(False)  # Remove border around plot
-
-    # Get the shape reader
-    shape = shapereader.Reader('shapes/gadm36_AUS_1.shp')
-
-    with warnings.catch_warnings():
-        warnings.simplefilter('ignore', category=RuntimeWarning)
-        # Plot data as a contour. Levels are used to decide the threshold for each contour level (currently 3 levels
-        # per month, see the colourbar in the result)
-        levels = [30, 40, 50, 61, 71, 81, 91, 101, 111, 122, 132, 142, 153, 163, 173, 181]
-        im = ax.contourf(data['lon'], data['lat'], data['green_dates'], extend='both',
-                         transform=cartopy.crs.PlateCarree(), levels=levels, colors=colours, zorder=1)
-
-    # Draw borders
-    for state in shape.records():
-        ax.add_geometries([state.geometry], cartopy.crs.PlateCarree(), edgecolor='black', facecolor='none',
-                          linewidth=0.4, zorder=3)
-
-    # Add a colourbar
-    colourbar_axis = figure.add_axes([0.21, 0.25, .6, .02])
-    colourbar = figure.colorbar(im, cax=colourbar_axis, extendfrac=.05, orientation='horizontal')
-    date_ticklabels = ['1 Oct', '1 Nov', '1 Dec', '1 Jan', '1 Feb', '1 Mar']
-    colourbar.set_ticks([30, 61, 91, 122, 153, 181])
-    colourbar.set_ticklabels(date_ticklabels)
-    for tick in colourbar.ax.get_xticklabels():
-        tick.set_font_properties(FontProperties(fname='fonts/Roboto-Light.ttf', size=8))
-
-    # Add the title
-    pyplot.text(.3, 1, options.title, transform=ax.transAxes, fontproperties=TITLE_FONT)
-
-    # Save map
-    pyplot.savefig('results/green_dates.png', dpi=150, bbox_inches='tight', pil_kwargs={'quality': 80})
-    pyplot.close()
 
 
 if __name__ == '__main__':

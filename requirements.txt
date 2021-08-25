@@ -7,3 +7,4 @@ numpy~=1.19.5
 scipy
 matplotlib~=3.3.4
 Cartopy~=0.18.0
+geopy~=2.2.0
