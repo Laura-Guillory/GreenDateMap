@@ -106,6 +106,7 @@ def calc_green_date(options):
     daily_rain = xarray.open_mfdataset(options.daily_rain, combine='by_coords')
     # Drop unnecessary variable
     daily_rain = daily_rain.drop_vars('crs', errors='ignore')
+    daily_rain = daily_rain.rename({'lon': 'longitude', 'lat': 'latitude'})
     # If a start date and end date are set via command line arguments, use those. Otherwise, use all data available
     start_date = options.start_date if options.start_date else daily_rain.time.values[0]
     end_date = options.end_date if options.end_date else daily_rain.time.values[-1]
@@ -144,7 +145,6 @@ def calc_green_date(options):
     green_date_per_year = xarray.open_mfdataset(processed_files, combine='by_coords')
     # Takes the green dates for each year and calculates the 70th percentile over all years.
     percentile_green_date = green_date_per_year.reduce(numpy.nanpercentile, dim='time', q=70)
-    percentile_green_date = percentile_green_date.rename({'lon': 'longitude', 'lat': 'latitude'})
     output_path = '{folder}/green_date_{threshold}mm.nc'.format(folder=options.output, threshold=options.rain_threshold)
     utils.save_to_netcdf(percentile_green_date, output_path, logging_level=logging.INFO)
     green_date_per_year.close()
@@ -177,11 +177,11 @@ def calc_green_date_for_year(args):
     # LOGGER.info('3 Day Sum:')
     # LOGGER.info(sum_3day.values[:, 400, 400])
     # Set up empty array to be filled with green dates
-    green_dates = numpy.full(shape=(1, dataset.lat.size, dataset.lon.size), fill_value=numpy.nan, dtype=float)
+    green_dates = numpy.full(shape=(1, dataset.latitude.size, dataset.longitude.size), fill_value=numpy.nan, dtype=float)
 
     # Iterate through lats, lon
-    for lat_i in range(sum_over_x_days.lat.size):
-        for lon_i in range(sum_over_x_days.lon.size):
+    for lat_i in range(sum_over_x_days.latitude.size):
+        for lon_i in range(sum_over_x_days.longitude.size):
             # Iterate through time. The 1st occurrence of rainfall over the threshold (Ymm over X days, both command
             # line arguments) is the green date. If rainfall is nan, it is assumed that rain doesn't cover this region
             # and the cell is skipped. If the last day of the year is reached, the green date is assumed to be the max
@@ -200,11 +200,11 @@ def calc_green_date_for_year(args):
                     green_dates[0, lat_i, lon_i] = sum_over_x_days.time.size
     # Insert results into a dataset to be saved
     green_dates = xarray.Dataset(
-        {'green_dates': (['time', 'lat', 'lon'], green_dates)},
+        {'green_dates': (['time', 'latitude', 'longitude'], green_dates)},
         coords={
             'time': [dataset.time.values[0].astype('datetime64[Y]')],
-            'latitude': dataset.lat,
-            'longitude': dataset.lon
+            'latitude': dataset.latitude,
+            'longitude': dataset.longitude
         }
     )
     description = 'Green Date, which is the first date after 1 September where there is historically a 70% chance of ' \
